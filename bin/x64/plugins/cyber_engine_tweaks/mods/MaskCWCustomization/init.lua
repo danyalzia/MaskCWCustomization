@@ -36,11 +36,26 @@ function ArrayRemove(recordNameArray, pos)
 end
 
 ---@param recordNameArray any
+function ArrayRemove(recordNameArray)
+  local newArray = TweakDB:GetFlat(recordNameArray)
+  table.remove(newArray)
+  TweakDB:SetFlat(recordNameArray, newArray)
+end
+
+---@param recordNameArray any
 ---@param element any
 ---@param pos? integer
 function ArrayInsert(recordNameArray, element, pos)
   local newArray = TweakDB:GetFlat(recordNameArray)
   table.insert(newArray, pos, element)
+  TweakDB:SetFlat(recordNameArray, newArray)
+end
+
+---@param recordNameArray any
+---@param element any
+function ArrayInsert(recordNameArray, element)
+  local newArray = TweakDB:GetFlat(recordNameArray)
+  table.insert(newArray, element)
   TweakDB:SetFlat(recordNameArray, newArray)
 end
 
