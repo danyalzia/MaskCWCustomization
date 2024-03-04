@@ -27,19 +27,95 @@ function SaveSettings()
   end
 end
 
-function SetFlatAndUpdate(name, value)
-  TweakDB:SetFlat(name, value)
-  TweakDB:Update(name)
+---@param recordNameArray any
+---@param pos? integer
+function ArrayRemove(recordNameArray, pos)
+  local newArray = TweakDB:GetFlat(recordNameArray)
+  table.remove(newArray, pos)
+  TweakDB:SetFlat(recordNameArray, newArray)
+end
+
+---@param recordNameArray any
+---@param element any
+---@param pos? integer
+function ArrayInsert(recordNameArray, element, pos)
+  local newArray = TweakDB:GetFlat(recordNameArray)
+  table.insert(newArray, pos, element)
+  TweakDB:SetFlat(recordNameArray, newArray)
+end
+
+function CreateGameplayLogicPackageUIData(recordName, floatValues, iconPath, intValues, localizedDescription,
+                                          localizedName, nameValues, stats)
+  if TweakDB:GetRecord(recordName) == nil then
+    TweakDB:CreateRecord(recordName, "gamedataGameplayLogicPackageUIData_Record")
+    TweakDB:SetFlatNoUpdate(recordName .. ".floatValues", floatValues)
+    TweakDB:SetFlatNoUpdate(recordName .. ".iconPath", iconPath)
+    TweakDB:SetFlatNoUpdate(recordName .. ".intValues", intValues)
+    TweakDB:SetFlatNoUpdate(recordName .. ".localizedDescription", localizedDescription)
+    TweakDB:SetFlatNoUpdate(recordName .. ".localizedName", localizedName)
+    TweakDB:SetFlatNoUpdate(recordName .. ".nameValues", nameValues)
+    TweakDB:SetFlatNoUpdate(recordName .. ".stats", stats)
+    TweakDB:Update(recordName)
+    return true
+  else
+    TweakDB:SetFlat(recordName .. ".floatValues", floatValues)
+    return false
+  end
+end
+
+function CreateConstantStatModifier(recordName, modifierType, statType, value)
+  if TweakDB:GetRecord(recordName) == nil then
+    TweakDB:CreateRecord(recordName, "gamedataConstantStatModifier_Record")
+    TweakDB:SetFlatNoUpdate(recordName .. ".modifierType", modifierType)
+    TweakDB:SetFlatNoUpdate(recordName .. ".statType", statType)
+    TweakDB:SetFlatNoUpdate(recordName .. ".value", value)
+    TweakDB:Update(recordName)
+    return true
+  else
+    TweakDB:SetFlat(recordName .. ".value", value)
+    return false
+  end
+end
+
+function CreateMaskCWGameplayLogicPackage(recordName, UIData)
+  if TweakDB:GetRecord(recordName) == nil then
+    TweakDB:CreateRecord(recordName, "gamedataGameplayLogicPackage_Record")
+    TweakDB:SetFlatNoUpdate(recordName .. ".UIData", UIData)
+    TweakDB:SetFlatNoUpdate(recordName .. ".animationWrapperOverrides", {})
+    TweakDB:SetFlatNoUpdate(recordName .. ".effectors", {})
+    TweakDB:SetFlatNoUpdate(recordName .. ".items", {})
+    TweakDB:SetFlatNoUpdate(recordName .. ".prereq", nil)
+    TweakDB:SetFlatNoUpdate(recordName .. ".stackable", false)
+    TweakDB:SetFlatNoUpdate(recordName .. ".statPools", {})
+    TweakDB:SetFlatNoUpdate(recordName .. ".stats", {})
+    TweakDB:Update(recordName)
+  else
+    TweakDB:SetFlat(recordName .. ".UIData", UIData)
+    TweakDB:SetFlat(recordName .. ".animationWrapperOverrides", {})
+    TweakDB:SetFlat(recordName .. ".effectors", {})
+    TweakDB:SetFlat(recordName .. ".items", {})
+    TweakDB:SetFlat(recordName .. ".prereq", nil)
+    TweakDB:SetFlat(recordName .. ".stackable", false)
+    TweakDB:SetFlat(recordName .. ".statPools", {})
+    TweakDB:SetFlat(recordName .. ".stats", {})
+  end
+end
+
+function CreateCWMaskIPrereq(recordName)
+  if TweakDB:GetRecord(recordName) == nil then
+    TweakDB:CreateRecord(recordName, "gamedataIPrereq_Record")
+    TweakDB:SetFlatNoUpdate(recordName .. ".stateName", "InCombat")
+    TweakDB:SetFlatNoUpdate(recordName .. ".isInState", false)
+    TweakDB:SetFlatNoUpdate(recordName .. ".prereqClassName", "CombatPSMPrereq")
+    TweakDB:Update(recordName)
+  else
+    TweakDB:SetFlat(recordName .. ".stateName", "InCombat")
+    TweakDB:SetFlat(recordName .. ".isInState", false)
+    TweakDB:SetFlat(recordName .. ".prereqClassName", "CombatPSMPrereq")
+  end
 end
 
 function SetTweak()
-  if TweakDB:GetRecord("Items.MaskCW_inline00") == nil then
-    TweakDB:CloneRecord("Items.MaskCW_inline00", "Items.MaskCWPlus_inline0")
-    local cwStatModifiers = TweakDB:GetFlat('Items.MaskCW.statModifiers')
-    table.insert(cwStatModifiers, "Items.MaskCW_inline00")
-    SetFlatAndUpdate('Items.MaskCW.statModifiers', cwStatModifiers)
-  end
-
   -- base\gameplay\static_data\database\characters\player\player_base_stats.tweak
   -- {
   --   statType = "BaseStats.CWMaskRechargeDuration";
@@ -47,33 +123,58 @@ function SetTweak()
   --   value = 1500;
   -- } : ConstantStatModifier
 
-  SetFlatAndUpdate("Items.MaskCW_inline1.floatValues", { settings.cwCooldown })
-  SetFlatAndUpdate("Items.MaskCWPlus_inline2.floatValues", { settings.cwPlusCooldown })
-  SetFlatAndUpdate("Items.MaskCWPlusPlus_inline2.floatValues", { settings.cwPlusPlusCooldown })
+  if CreateGameplayLogicPackageUIData("Items.MaskCWGameplayLogicPackageUIData", { settings.cwCooldown }, "cw_facemask", {}, "LocKey#93182", "", {}, {}) then
+    CreateMaskCWGameplayLogicPackage("Items.MaskCWGameplayLogicPackage", "Items.MaskCWGameplayLogicPackageUIData")
+    ArrayRemove("Items.MaskCW.OnEquip")
+    ArrayInsert("Items.MaskCW.OnEquip", "Items.MaskCWGameplayLogicPackage")
+  end
 
-  SetFlatAndUpdate("Items.MaskCW_inline00.value", -1500.000000 + settings.cwCooldown)
-  SetFlatAndUpdate("Items.MaskCWPlus_inline0.value", -1500.000000 + settings.cwPlusCooldown)
-  SetFlatAndUpdate("Items.MaskCWPlusPlus_inline0.value", -1500.000000 + settings.cwPlusPlusCooldown)
+  if CreateGameplayLogicPackageUIData("Items.MaskCWPlusGameplayLogicPackageUIData", { settings.cwPlusCooldown }, "cw_facemask", {}, "LocKey#93182", "", {}, {}) then
+    CreateMaskCWGameplayLogicPackage("Items.MaskCWPlusGameplayLogicPackage", "Items.MaskCWPlusGameplayLogicPackageUIData")
+    ArrayRemove("Items.MaskCWPlus.OnEquip")
+    ArrayInsert("Items.MaskCWPlus.OnEquip", "Items.MaskCWPlusGameplayLogicPackage")
+  end
+
+  if CreateGameplayLogicPackageUIData("Items.MaskCWPlusPlusGameplayLogicPackageUIData", { settings.cwPlusPlusCooldown }, "cw_facemask", {}, "LocKey#93182", "", {}, {}) then
+    CreateMaskCWGameplayLogicPackage("Items.MaskCWPlusPlusGameplayLogicPackage",
+      "Items.MaskCWPlusPlusGameplayLogicPackageUIData")
+    ArrayRemove("Items.MaskCWPlusPlus.OnEquip")
+    ArrayInsert("Items.MaskCWPlusPlus.OnEquip", "Items.MaskCWPlusPlusGameplayLogicPackage")
+  end
+
+  if CreateConstantStatModifier("Items.MaskCWCooldownConstantStatModifier", "Additive", "BaseStats.CWMaskRechargeDuration", -1500.000000 + settings.cwCooldown) then
+    ArrayRemove("Items.MaskCW.statModifiers")
+    ArrayInsert("Items.MaskCW.statModifiers", "Items.MaskCWCooldownConstantStatModifier")
+  end
+
+  if CreateConstantStatModifier("Items.MaskCWPlusCooldownConstantStatModifier", "Additive", "BaseStats.CWMaskRechargeDuration", -1500.000000 + settings.cwPlusCooldown) then
+    ArrayRemove("Items.MaskCWPlus.statModifiers")
+    ArrayInsert("Items.MaskCWPlus.statModifiers", "Items.MaskCWPlusCooldownConstantStatModifier")
+  end
+
+  if CreateConstantStatModifier("Items.MaskCWPlusPlusCooldownConstantStatModifier", "Additive", "BaseStats.CWMaskRechargeDuration", -1500.000000 + settings.cwPlusPlusCooldown) then
+    ArrayRemove("Items.MaskCWPlusPlus.statModifiers")
+    ArrayInsert("Items.MaskCWPlusPlus.statModifiers", "Items.MaskCWPlusPlusCooldownConstantStatModifier")
+  end
 
   local instigatorPrereqs = TweakDB:GetFlat('CyberwareAction.UseCWMask.instigatorPrereqs')
 
   if settings.allowInCombat then
-    -- Remove CombatPSMPrereq
-    table.remove(instigatorPrereqs)
-    table.remove(instigatorPrereqs)
-    table.insert(instigatorPrereqs, "CyberwareAction.UseCWMask_inline1")
-    SetFlatAndUpdate('CyberwareAction.UseCWMask.instigatorPrereqs', instigatorPrereqs)
+    if #instigatorPrereqs == 2 then
+      ArrayRemove("CyberwareAction.UseCWMask.instigatorPrereqs", 1)
+    end
   else
-    table.remove(instigatorPrereqs)
-    table.remove(instigatorPrereqs)
-    table.insert(instigatorPrereqs, "CyberwareAction.UseCWMask_inline0")
-    table.insert(instigatorPrereqs, "CyberwareAction.UseCWMask_inline1")
-    SetFlatAndUpdate('CyberwareAction.UseCWMask.instigatorPrereqs', instigatorPrereqs)
+    if #instigatorPrereqs < 2 then
+      CreateCWMaskIPrereq("CyberwareAction.UseCWMaskIPrereq")
+      ArrayInsert("CyberwareAction.UseCWMask.instigatorPrereqs", "CyberwareAction.UseCWMaskIPrereq", 1)
+    end
   end
 end
 
 function InitializeUI()
   nativeSettings = GetMod("nativeSettings")
+
+  if nativeSettings == nil then return end
 
   if not nativeSettings.pathExists("/MaskCWCustomization") then
     nativeSettings.addTab(
