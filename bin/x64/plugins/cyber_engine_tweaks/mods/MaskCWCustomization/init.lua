@@ -28,14 +28,6 @@ function SaveSettings()
 end
 
 ---@param recordNameArray any
----@param pos? integer
-function ArrayRemove(recordNameArray, pos)
-  local newArray = TweakDB:GetFlat(recordNameArray)
-  table.remove(newArray, pos)
-  TweakDB:SetFlat(recordNameArray, newArray)
-end
-
----@param recordNameArray any
 function ArrayRemove(recordNameArray)
   local newArray = TweakDB:GetFlat(recordNameArray)
   table.remove(newArray)
@@ -43,11 +35,10 @@ function ArrayRemove(recordNameArray)
 end
 
 ---@param recordNameArray any
----@param element any
----@param pos? integer
-function ArrayInsert(recordNameArray, element, pos)
+---@param pos integer
+function ArrayRemoveAtPos(recordNameArray, pos)
   local newArray = TweakDB:GetFlat(recordNameArray)
-  table.insert(newArray, pos, element)
+  table.remove(newArray, pos)
   TweakDB:SetFlat(recordNameArray, newArray)
 end
 
@@ -56,6 +47,15 @@ end
 function ArrayInsert(recordNameArray, element)
   local newArray = TweakDB:GetFlat(recordNameArray)
   table.insert(newArray, element)
+  TweakDB:SetFlat(recordNameArray, newArray)
+end
+
+---@param recordNameArray any
+---@param element any
+---@param pos integer
+function ArrayInsertAtPos(recordNameArray, element, pos)
+  local newArray = TweakDB:GetFlat(recordNameArray)
+  table.insert(newArray, pos, element)
   TweakDB:SetFlat(recordNameArray, newArray)
 end
 
@@ -116,7 +116,8 @@ function CreateMaskCWGameplayLogicPackage(recordName, UIData)
   end
 end
 
-function CreateCWMaskIPrereq(recordName)
+-- CyberwareAction.UseCWMask_inline0
+function CreateCWMaskCombatPSMPrereq(recordName)
   if TweakDB:GetRecord(recordName) == nil then
     TweakDB:CreateRecord(recordName, "gamedataIPrereq_Record")
     TweakDB:SetFlatNoUpdate(recordName .. ".stateName", "InCombat")
@@ -176,12 +177,12 @@ function SetTweak()
 
   if settings.allowInCombat then
     if #instigatorPrereqs == 2 then
-      ArrayRemove("CyberwareAction.UseCWMask.instigatorPrereqs", 1)
+      ArrayRemoveAtPos("CyberwareAction.UseCWMask.instigatorPrereqs", 1)
     end
   else
     if #instigatorPrereqs < 2 then
-      CreateCWMaskIPrereq("CyberwareAction.UseCWMaskIPrereq")
-      ArrayInsert("CyberwareAction.UseCWMask.instigatorPrereqs", "CyberwareAction.UseCWMaskIPrereq", 1)
+      CreateCWMaskCombatPSMPrereq("CyberwareAction.UseCWMaskCombatPSMPrereq")
+      ArrayInsertAtPos("CyberwareAction.UseCWMask.instigatorPrereqs", "CyberwareAction.UseCWMaskCombatPSMPrereq", 1)
     end
   end
 end
